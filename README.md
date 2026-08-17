@@ -98,6 +98,13 @@ for the full production runbook, and
 [docs/deploy/entra-app-registration.md](docs/deploy/entra-app-registration.md)
 for the Entra setup.
 
+## Support this project
+
+If this project is useful to you or your organization, you can support its
+maintenance with a donation:
+
+[![Buy Me a Coffee](https://img.shields.io/badge/Buy%20Me%20a%20Coffee-salleh-FFDD00?logo=buymeacoffee&logoColor=black)](https://buymeacoffee.com/salleh)
+
 ## License
 
 [MIT](LICENSE) © 2026 Sallehuddin Abdul Latif \<sallehuddin@gmail.com\>
