@@ -1,0 +1,27 @@
+/*
+ * Brand theme — EDIT THIS FILE when deploying for your org.
+ *
+ * The `--color-brand-*` scale is what every Tailwind `brand-*` utility in the
+ * app resolves to (`bg-brand-500`, `text-brand-600`, `ring-brand-500/30`, …).
+ * 500 is the primary brand color; the other steps are lighter/darker tints of
+ * it. Regenerate a scale from your primary with any Tailwind palette tool
+ * (e.g. uicolors.app) and paste it here.
+ *
+ * Keep `themeColor` in customization/org.ts in sync with `--color-brand-500`
+ * (the PWA manifest cannot read CSS variables).
+ */
+@theme {
+  --color-brand-50: #fff4ec;
+  --color-brand-100: #ffe3d1;
+  --color-brand-200: #ffc4a3;
+  --color-brand-300: #fb9d6b;
+  --color-brand-400: #f77f45;
+  --color-brand-500: #f26522; /* primary brand color */
+  --color-brand-600: #d9531a;
+  --color-brand-700: #b44214;
+  --color-brand-800: #8f3411;
+  --color-brand-900: #742c10;
+
+  --font-sans:
+    ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}

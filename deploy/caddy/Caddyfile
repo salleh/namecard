@@ -1,0 +1,29 @@
+# Internal reverse proxy. TLS terminates at the external DMZ nginx, which
+# forwards plain HTTP here with X-Forwarded-Proto: https set. We trust private
+# ranges so Caddy PRESERVES those upstream forwarded headers (rather than
+# overwriting X-Forwarded-Proto with "http") — required for Auth.js secure
+# cookies and correct OIDC redirect URLs.
+{
+	auto_https off
+	servers {
+		# TODO (Step 9, security H-2): narrow to the DMZ nginx's specific IP/CIDR
+		# once known (instead of all private ranges), and bind Caddy's published
+		# port to the DMZ-facing interface only.
+		trusted_proxies static private_ranges
+	}
+}
+
+# Listens on 8090 (not 80): the prod host is shared with another compose app,
+# so this stack must avoid the common host ports. The DMZ nginx forwards to
+# http://<docker-host>:8090. Keep this in sync with the published port in
+# docker-compose.prod.yml.
+:8090 {
+	encode gzip
+	reverse_proxy app:3000 {
+		# Caddy resolves the true client IP against trusted_proxies and injects it
+		# as an unspoofable header the app's rate limiter reads (security H-1).
+		# The upstream DMZ nginx MUST overwrite (not append) any client-supplied
+		# X-Forwarded-For for this to be trustworthy.
+		header_up X-Real-Client-IP {client_ip}
+	}
+}

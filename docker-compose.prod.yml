@@ -1,0 +1,97 @@
+# PRODUCTION stack — self-contained (no base file). Run from
+# /home/encard/namecard on the docker host:
+#   docker compose -f docker-compose.prod.yml up -d --build
+#
+# Secrets + state live under /home/encard/data (separate from this repo clone).
+# NAMECARD_PROD_ENV lets CI/local validate config against a sample file; on the
+# host it defaults to the real secrets file. Stack/project name is `encard`.
+name: encard
+services:
+  db:
+    image: postgres:16
+    restart: unless-stopped
+    env_file: "${NAMECARD_PROD_ENV:-/home/encard/data/.env.prod}"
+    volumes:
+      - /home/encard/data/postgres:/var/lib/postgresql/data
+    # No host port published in production.
+    healthcheck:
+      # $$ escapes compose interpolation so the container's own env is used.
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # One-shot: applies pending Prisma migrations, then exits 0. `app` waits for
+  # this to complete successfully, so the schema is always current before the
+  # server starts. Runs on every `up`; a no-op (fast exit) when nothing is pending.
+  migrator:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: migrator
+    env_file: "${NAMECARD_PROD_ENV:-/home/encard/data/.env.prod}"
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: "no"
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: runner
+    restart: unless-stopped
+    env_file: "${NAMECARD_PROD_ENV:-/home/encard/data/.env.prod}"
+    depends_on:
+      db:
+        condition: service_healthy
+      migrator:
+        condition: service_completed_successfully
+    expose:
+      - "3000"
+    healthcheck:
+      # Hits the always-public manifest route (no auth, returns 200) using
+      # Node's built-in fetch, so `caddy` can wait until the app truly serves.
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:3000/manifest.webmanifest').then((r)=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    depends_on:
+      app:
+        condition: service_healthy
+    # 8090 (not 80): the prod host is shared with another compose app on 8080,
+    # so this stack publishes on 8090. The DMZ nginx forwards here. Must match
+    # the listener in deploy/caddy/Caddyfile.
+    ports:
+      - "8090:8090"
+    volumes:
+      - ./deploy/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+
+# Pin the stack to a fixed, non-conflicting subnet. Compose's auto-assigned pool
+# (172.17.0.0/16, 172.18.0.0/16, …) collided with the DMZ segment (172.16.0.0/12),
+# so replies bound for the DMZ proxy were routed into the bridge and timed out
+# (504). All services use the implicit `default` network, so we configure THAT
+# here — a separately-named network is ignored unless every service opts into it.
+networks:
+  default:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.27.1.0/24
+
+volumes:
+  caddy_data:
+  caddy_config:

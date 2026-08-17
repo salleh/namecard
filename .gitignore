@@ -1,0 +1,33 @@
+# deps / build
+node_modules/
+.next/
+out/
+build/
+coverage/
+playwright-report/
+test-results/
+
+# next
+next-env.d.ts
+*.tsbuildinfo
+
+# serwist output
+public/sw.js
+public/sw.js.map
+
+# local docker data
+.data/
+
+# env — ignore all env files, then re-include the committed examples
+.env
+.env.*
+!.env.example
+!.env.dev.example
+!.env.prod.example
+!.env.test.example
+
+# os / editor
+.DS_Store
+
+# claude local settings
+.claude/settings.local.json

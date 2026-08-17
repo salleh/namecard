@@ -1,0 +1,89 @@
+// Prisma schema for the e-Namecard app.
+// See CLAUDE.md ("Data Model") and docs/plan/implementation-plan.md (Step 2).
+
+generator client {
+  provider      = "prisma-client-js"
+  // "native" covers local dev (macOS/Linux glibc); the musl target matches
+  // the node:24-alpine production image (Dockerfile) to avoid an engine
+  // mismatch at deploy time.
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Column naming: Prisma quotes all identifiers, so these stay camelCase at the
+// DB level. That is acceptable because CLAUDE.md guarantees Prisma-only DB access
+// ("never edit the DB by hand"). If raw SQL / psql access is ever needed, revisit
+// with per-field @map("snake_case") (DB review MED-2, accepted trade-off).
+//
+// Public lookups are `WHERE emailSlug = ? AND activated = true AND disabled = false`
+// (see Access Rules in CLAUDE.md). `emailSlug` already carries a unique index via
+// @unique below, so the lookup is a single-row index hit; a composite index on
+// (emailSlug, activated, disabled) would not narrow it further (emailSlug is 1:1),
+// so it is intentionally omitted (YAGNI) — add one only if profiling shows otherwise.
+model StaffCard {
+  id String @id @default(uuid())
+
+  // Stable key linking the login to this row (Entra object id). Never exposed publicly.
+  entraObjectId String @unique
+
+  // Public URL slug — lowercased local part of the staff email. No internal staff ID
+  // is stored or exposed anywhere in this model.
+  // TODO (Step 4): add a DB CHECK (lowercase + safe charset + length) alongside
+  // app-layer Zod validation once slug derivation/lookup lands (DB review MED-3).
+  emailSlug String @unique
+
+  activated Boolean @default(false)
+  disabled  Boolean @default(false)
+
+  // vCard fields — staff-fillable / staff-overridable. Nullable: not all are known
+  // at first login, and staff may leave some blank.
+  displayName    String?
+  givenName      String?
+  surname        String?
+  jobTitle       String?
+  department     String?
+  company        String?
+  email          String?
+  businessPhone  String?
+  mobilePhone    String?
+  faxNumber      String?
+  officeLocation String?
+  address        String?
+  website        String?
+
+  // Raw image bytes, consumed two ways: the public `/avatar/<slug>` endpoint
+  // serves them for the on-page <img> and the QR's `PHOTO;VALUE=URI` reference,
+  // and the `.vcf` download inlines them as base64 (`PHOTO;ENCODING=b`).
+  photo Bytes?
+
+  // Raw first-login Microsoft Graph payload, kept for reference/debugging only.
+  graphSnapshot Json?
+
+  // Timestamptz (not naked timestamp) so stored instants are timezone-unambiguous
+  // across container restarts, dump/restore, and any future multi-region move.
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @db.Timestamptz(3)
+
+  @@map("staff_cards")
+}
+
+// Admin-controlled field-lock policy (HR enhancement, Request 1). The presence of
+// a row means that vCard field is LOCKED: staff cannot edit it on `/me` and must
+// ask the eNamecard admin to change it. The default — an empty table — locks
+// nothing, preserving the original all-editable behavior, so an unmigrated or
+// freshly-migrated database keeps working exactly as before.
+//
+// `field` holds one of the EDITABLE_TEXT_FIELDS names (the app validates against
+// that allowlist on every write — see src/features/card/fieldPolicy.ts — so no
+// unknown/junk field name can ever be persisted here). Global policy, not
+// per-employee (per-employee admin edits are a separate enhancement).
+model FieldLock {
+  field     String   @id
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+
+  @@map("field_locks")
+}
