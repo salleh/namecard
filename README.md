@@ -1,5 +1,14 @@
 # e-Namecard
 
+[![GitHub release](https://img.shields.io/github/v/release/salleh/namecard?logo=github)](https://github.com/salleh/namecard/releases)
+[![License](https://img.shields.io/github/license/salleh/namecard?color=blue)](LICENSE)
+[![Node.js](https://img.shields.io/badge/node-%E2%89%A524.18-339933?logo=node.js&logoColor=white)](.nvmrc)
+[![Next.js](https://img.shields.io/badge/Next.js-15-black?logo=next.js&logoColor=white)](https://nextjs.org)
+[![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178C6?logo=typescript&logoColor=white)](tsconfig.json)
+[![Prisma](https://img.shields.io/badge/Prisma-PostgreSQL-2D3748?logo=prisma&logoColor=white)](prisma/schema.prisma)
+[![PRs welcome](https://img.shields.io/badge/PRs-welcome-brightgreen)](https://github.com/salleh/namecard/pulls)
+[![Buy Me a Coffee](https://img.shields.io/badge/Buy%20Me%20a%20Coffee-salleh-FFDD00?logo=buymeacoffee&logoColor=black)](https://buymeacoffee.com/salleh)
+
 A white-label PWA that displays a staff member's electronic namecard as a QR
 code encoding vCard contact information. Scanning the QR (or downloading the
 `.vcf`) adds the staff member to a phone's contacts — a paperless replacement
