@@ -1,5 +1,6 @@
 # e-Namecard
 
+[![CI](https://img.shields.io/github/actions/workflow/status/salleh/namecard/ci.yml?branch=main&logo=githubactions&logoColor=white&label=CI)](https://github.com/salleh/namecard/actions/workflows/ci.yml)
 [![GitHub release](https://img.shields.io/github/v/release/salleh/namecard?logo=github)](https://github.com/salleh/namecard/releases)
 [![License](https://img.shields.io/github/license/salleh/namecard?color=blue)](LICENSE)
 [![Node.js](https://img.shields.io/badge/node-%E2%89%A524.18-339933?logo=node.js&logoColor=white)](.nvmrc)
